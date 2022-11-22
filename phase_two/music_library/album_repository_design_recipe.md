@@ -125,7 +125,7 @@ class AlbumRepository
   # One argument: the id (number)
   def find(id)
     # Executes the SQL query:
-    # SELECT id, name, cohort_name FROM students WHERE id = $1;
+    # SELECT id, title, release_year, artist_id FROM albums WHERE id = $1;
 
     # Returns a single Student object.
   end
@@ -165,7 +165,7 @@ albums.first.title # => 'Doolittle'
 albums[1].release_year # => '1974'
 
 # 2
-# Get a single student
+# Get a single album
 
 repo = AlbumRepository.new
 
@@ -174,6 +174,17 @@ album = repo.find(1)
 album.title # => 'Doolittle'
 album.release_year # =>  '1989'
 # Add more examples for each method
+
+# 3 Get a single album
+
+repo = AlbumRepository.new
+
+album = repo.find(2)
+
+album.title # => 'Waterloo'
+album.release_year # =>  '1974'
+
+
 ```
 
 Encode this example as a test.
