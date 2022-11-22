@@ -20,7 +20,7 @@ class BookRepository
   end
   
   def find(id)
-    sql = "SELECT * FROM books WHERE id = #{id}"
+    sql = "SELECT * FROM books WHERE id = #{id};"
 
     result = DatabaseConnection.exec_params(sql,[])
 
