@@ -115,7 +115,7 @@ Replace the relevant bits in this example with your own:
 CREATE TABLE cohorts (
   id SERIAL PRIMARY KEY,
   cohort_name text,
-  start_date date,
+  start_date date
 );
 
 -- Then the table with the foreign key first.
