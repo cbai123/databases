@@ -1,11 +1,13 @@
 require_relative 'lib/database_connection.rb'
+require_relative'lib/album_repository'
+require_relative 'lib/album'
 
 DatabaseConnection.connect('music_library')
 
-sql = 'SELECT id,title FROM albums;'
+repo = AlbumRepository.new
 
-result = DatabaseConnection.exec_params(sql, [])
+results = repo.all
 
-result.each{ |record| 
-  p record
+results.each{ |entry|
+  p entry
 }
