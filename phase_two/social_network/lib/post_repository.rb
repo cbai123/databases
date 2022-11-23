@@ -80,6 +80,5 @@ class PostRepository
     DatabaseConnection.exec_params(sql,params)
 
     return nil
-    # Returns nothing
   end
 end
