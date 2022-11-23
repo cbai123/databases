@@ -127,18 +127,30 @@ class AlbumRepository
     # Executes the SQL query:
     # SELECT id, title, release_year, artist_id FROM albums WHERE id = $1;
 
-    # Returns a single Student object.
+    # Returns a single Album object.
   end
 
   # Add more methods below for each operation you'd like to implement.
 
-  # def create(student)
+  # def create(album)
+    # Executes the SQL query:
+    # INSERT INTO albums (title, release_year, artist_id) VALUES($1, $2, $3);
+
+    # Returns nothing
   # end
 
-  # def update(student)
+  # def update(album)
+    # Executes the SQL query:
+    # UPDATE albums SET title = $1, release_year = $2, artist_id = $3 WHERE id = $4;
+
+    # Returns nothing
   # end
 
-  # def delete(student)
+  # def delete(album)
+    # Executes the SQL query:
+    # DELETE FROM albums WHERE id = $1;
+
+    # Returns nothing
   # end
 end
 ```
@@ -184,7 +196,17 @@ album = repo.find(2)
 album.title # => 'Waterloo'
 album.release_year # =>  '1974'
 
+# 4 create a new artist
+repo = AlbumRepository.new
+new_album = Album.new
+new_album.title = 'The Getaway'
+new_album.release_year = '2016'
+new_album.artist_id = 3
 
+repo.create(new_album)
+
+repo.last.id # => 3
+repo.last.title # => 'The Getaway'
 ```
 
 Encode this example as a test.
