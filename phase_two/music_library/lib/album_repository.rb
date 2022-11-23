@@ -1,3 +1,5 @@
+require_relative './album'
+require_relative './database_connection'
 class AlbumRepository
   def all
     sql = 'SELECT * FROM albums'
