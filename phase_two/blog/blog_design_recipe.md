@@ -27,7 +27,7 @@ If seed data is provided (or you already created it), you can skip this step.
 
 ```sql
 -- EXAMPLE
--- (file: spec/seeds_{table_name}.sql)
+-- (file: spec/seeds_blog.sql)
 
 -- Write your SQL seed here. 
 
@@ -35,19 +35,27 @@ If seed data is provided (or you already created it), you can skip this step.
 -- so we can start with a fresh state.
 -- (RESTART IDENTITY resets the primary key)
 
-TRUNCATE TABLE students RESTART IDENTITY; -- replace with your own table name.
+TRUNCATE TABLE posts RESTART IDENTITY CASCADE; -- replace with your own table name.
 
 -- Below this line there should only be `INSERT` statements.
 -- Replace these statements with your own seed data.
 
-INSERT INTO students (name, cohort_name) VALUES ('David', 'April 2022');
-INSERT INTO students (name, cohort_name) VALUES ('Anna', 'May 2022');
+INSERT INTO posts (title, content) VALUES ('post title 1', 'post content 1');
+INSERT INTO posts (title, content) VALUES ('post title 2', 'post content 2');
+
+TRUNCATE TABLE comments RESTART IDENTITY;
+
+INSERT INTO comments (name, content, post_id) VALUES('name 1', 'content 1', 1);
+INSERT INTO comments (name, content, post_id) VALUES('name 2', 'content 2', 1);
+INSERT INTO comments (name, content, post_id) VALUES('name 3', 'content 3', 2);
+INSERT INTO comments (name, content, post_id) VALUES('name 4', 'content 4', 2);
+INSERT INTO comments (name, content, post_id) VALUES('name 5', 'content 5', 1);
 ```
 
 Run this SQL file on the database to truncate (empty) the table, and insert the seed data. Be mindful of the fact any existing records in the table will be deleted.
 
 ```bash
-psql -h 127.0.0.1 your_database_name < seeds_{table_name}.sql
+psql -h 127.0.0.1 blog < seeds_blog.sql
 ```
 
 ## 3. Define the class names
@@ -56,16 +64,21 @@ Usually, the Model class name will be the capitalised table name (single instead
 
 ```ruby
 # EXAMPLE
-# Table name: students
+# Table name: comments
 
 # Model class
-# (in lib/student.rb)
-class Student
+# (in lib/comment.rb)
+class Comment
+end
+
+# Model class
+# (in lib/post.rb)
+class Post
 end
 
 # Repository class
-# (in lib/student_repository.rb)
-class StudentRepository
+# (in lib/post_repository.rb)
+class PostRepository
 end
 ```
 
@@ -75,24 +88,24 @@ Define the attributes of your Model class. You can usually map the table columns
 
 ```ruby
 # EXAMPLE
-# Table name: students
+# Table name: comments
 
 # Model class
-# (in lib/student.rb)
+# (in lib/comment.rb)
 
-class Student
-
-  # Replace the attributes by your own columns.
-  attr_accessor :id, :name, :cohort_name
+class Comment
+  attr_accessor :id, :name, :content, :post_id
 end
 
-# The keyword attr_accessor is a special Ruby feature
-# which allows us to set and get attributes on an object,
-# here's an example:
-#
-# student = Student.new
-# student.name = 'Jo'
-# student.name
+# Model class
+# (in lib/post.rb)
+
+class Post
+  attr_accessor :id, :title, :content, :comments
+  def initialize
+    @comments = []
+  end
+end
 ```
 
 *You may choose to test-drive this class, but unless it contains any more logic than the example above, it is probably not needed.*
@@ -105,29 +118,37 @@ Using comments, define the method signatures (arguments and return value) and wh
 
 ```ruby
 # EXAMPLE
-# Table name: students
+# Table name: posts
 
 # Repository class
-# (in lib/student_repository.rb)
+# (in lib/post_repository.rb)
 
-class StudentRepository
+class PostRepository
 
   # Selecting all records
   # No arguments
   def all
     # Executes the SQL query:
-    # SELECT id, name, cohort_name FROM students;
+    # SELECT id, title, content FROM posts;
 
-    # Returns an array of Student objects.
+    # Returns an array of Post objects.
   end
 
   # Gets a single record by its ID
   # One argument: the id (number)
   def find(id)
     # Executes the SQL query:
-    # SELECT id, name, cohort_name FROM students WHERE id = $1;
+    # SELECT id, title, content FROM posts WHERE id = $1;
 
-    # Returns a single Student object.
+    # Returns a single Post object.
+  end
+
+  def find_with_comments(id)
+    # Executes the SQL query:
+    # SELECT posts.id, posts.title, posts.content, comments.name, comments.content AS comment_content FROM posts JOIN comments ON posts.id = comments.post_id WHERE posts.id = $1
+    # params = [id]
+
+    # Returns a single post object with an array of comment objects
   end
 
   # Add more methods below for each operation you'd like to implement.
@@ -153,32 +174,47 @@ These examples will later be encoded as RSpec tests.
 # EXAMPLES
 
 # 1
-# Get all students
+# Get all posts
 
-repo = StudentRepository.new
+repo = PostRepository.new
 
-students = repo.all
+posts = repo.all
 
-students.length # =>  2
+posts.length # =>  2
 
-students[0].id # =>  1
-students[0].name # =>  'David'
-students[0].cohort_name # =>  'April 2022'
+posts[0].id # =>  1
+posts[0].title # =>  'title 1'
+posts[0].content # =>  'post content 1'
 
-students[1].id # =>  2
-students[1].name # =>  'Anna'
-students[1].cohort_name # =>  'May 2022'
+posts[1].id # =>  2
+posts[1].title # =>  'title 2'
+posts[1].content # =>  'post content 2'
 
 # 2
-# Get a single student
+# Get a single post
 
-repo = StudentRepository.new
+repo = PostRepository.new
 
-student = repo.find(1)
+post = repo.find(1)
 
-student.id # =>  1
-student.name # =>  'David'
-student.cohort_name # =>  'April 2022'
+post.id # =>  1
+post.title # =>  'title 1'
+post.content # =>  'post content 1'
+
+# 3
+# Get a single post with an array of comments
+
+repo = PostRepository.new
+
+post = repo.find_with_comments(1)
+
+post.id # =>  1
+post.title # =>  'title 1'
+post.content # =>  'post content 1'
+
+post.comments.length # => 3
+post.comments.first.name # => 'name 1'
+post.comments.last.name # => 'name 5'
 
 # Add more examples for each method
 ```
@@ -194,17 +230,17 @@ This is so you get a fresh table contents every time you run the test suite.
 ```ruby
 # EXAMPLE
 
-# file: spec/student_repository_spec.rb
+# file: spec/post_repository_spec.rb
 
-def reset_students_table
-  seed_sql = File.read('spec/seeds_students.sql')
-  connection = PG.connect({ host: '127.0.0.1', dbname: 'students' })
+def reset_blog_db
+  seed_sql = File.read('spec/seeds_blog.sql')
+  connection = PG.connect({ host: '127.0.0.1', dbname: 'blog' })
   connection.exec(seed_sql)
 end
 
-describe StudentRepository do
+describe PostRepository do
   before(:each) do 
-    reset_students_table
+    reset_blog_db
   end
 
   # (your tests will go here).
