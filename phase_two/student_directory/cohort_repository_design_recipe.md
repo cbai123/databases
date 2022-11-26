@@ -8,12 +8,12 @@ If the table is already created in the database, you can skip this step.
 
 Otherwise, [follow this recipe to design and create the SQL schema for your table](./single_table_design_recipe_template.md).
 
-*In this template, we'll use an example table `students`*
+*In this template, we'll use an example table `cohorts`*
 
 ```
 # EXAMPLE
 
-Table: students
+Table: cohorts
 
 Columns:
 id | name | cohort_name
@@ -27,7 +27,7 @@ If seed data is provided (or you already created it), you can skip this step.
 
 ```sql
 -- EXAMPLE
--- (file: spec/seeds_{table_name}.sql)
+-- (file: spec/seeds_cohorts.sql)
 
 -- Write your SQL seed here. 
 
@@ -35,13 +35,23 @@ If seed data is provided (or you already created it), you can skip this step.
 -- so we can start with a fresh state.
 -- (RESTART IDENTITY resets the primary key)
 
-TRUNCATE TABLE students RESTART IDENTITY; -- replace with your own table name.
+TRUNCATE TABLE cohorts RESTART IDENTITY; -- replace with your own table name.
 
 -- Below this line there should only be `INSERT` statements.
 -- Replace these statements with your own seed data.
 
-INSERT INTO students (name, cohort_name) VALUES ('David', 'April 2022');
-INSERT INTO students (name, cohort_name) VALUES ('Anna', 'May 2022');
+INSERT INTO cohorts (name, cohort_id) VALUES ('David', 1);
+INSERT INTO cohorts (name, cohort_id) VALUES ('Anna', 1);
+INSERT INTO cohorts (name, cohort_id) VALUES ('Chris', 2);
+INSERT INTO cohorts (name, cohort_id) VALUES ('Matt', 2);
+INSERT INTO cohorts (name, cohort_id) VALUES ('Pat', 1);
+
+-- (file: spec/seeds_cohorts.sql)
+
+TRUNCATE TABLE cohorts RESTART IDENTITY CASCADE;
+
+INSERT INTO cohorts (cohort_name, start_date) VALUES ('January 2022', '2022-01-10')
+INSERT INTO cohorts (cohort_name, start_date) VALUES ('February 2022', '2022-02-10')
 ```
 
 Run this SQL file on the database to truncate (empty) the table, and insert the seed data. Be mindful of the fact any existing records in the table will be deleted.
@@ -56,16 +66,21 @@ Usually, the Model class name will be the capitalised table name (single instead
 
 ```ruby
 # EXAMPLE
-# Table name: students
+# Table name: cohorts
 
 # Model class
-# (in lib/student.rb)
-class Student
+# (in lib/cohort.rb)
+class cohort
+end
+
+# Model class
+# (in lib/cohort.rb)
+class Cohort
 end
 
 # Repository class
-# (in lib/student_repository.rb)
-class StudentRepository
+# (in lib/cohort_repository.rb)
+class CohortRepository
 end
 ```
 
@@ -74,25 +89,23 @@ end
 Define the attributes of your Model class. You can usually map the table columns to the attributes of the class, including primary and foreign keys.
 
 ```ruby
-# EXAMPLE
-# Table name: students
+# Table name: cohorts
 
 # Model class
-# (in lib/student.rb)
+# (in lib/cohort.rb)
 
-class Student
-
-  # Replace the attributes by your own columns.
-  attr_accessor :id, :name, :cohort_name
+class cohort
+  attr_accessor :id, :name, :cohort_id
 end
 
-# The keyword attr_accessor is a special Ruby feature
-# which allows us to set and get attributes on an object,
-# here's an example:
-#
-# student = Student.new
-# student.name = 'Jo'
-# student.name
+# Table name: cohorts
+
+# Model class
+# (in lib/cohort.rb)
+
+class Cohort
+  attr_accessor :id, :cohort_name, :start_date
+end
 ```
 
 *You may choose to test-drive this class, but unless it contains any more logic than the example above, it is probably not needed.*
@@ -105,40 +118,48 @@ Using comments, define the method signatures (arguments and return value) and wh
 
 ```ruby
 # EXAMPLE
-# Table name: students
+# Table name: cohorts
 
 # Repository class
-# (in lib/student_repository.rb)
+# (in lib/cohort_repository.rb)
 
-class StudentRepository
+class CohortRepository
 
   # Selecting all records
   # No arguments
   def all
     # Executes the SQL query:
-    # SELECT id, name, cohort_name FROM students;
+    # SELECT id, name, cohort_name FROM cohorts;
 
-    # Returns an array of Student objects.
+    # Returns an array of cohort objects.
   end
 
   # Gets a single record by its ID
   # One argument: the id (number)
   def find(id)
     # Executes the SQL query:
-    # SELECT id, name, cohort_name FROM students WHERE id = $1;
+    # SELECT id, name, cohort_name FROM cohorts WHERE id = $1;
 
-    # Returns a single Student object.
+    # Returns a single cohort object.
+  end
+
+  def find_with_cohorts(id)
+    # Executes the SQL query:
+    # SELECT cohorts.id, cohorts.cohort_name, cohorts.start_date, cohorts.id AS cohort_id, cohorts.name FROM cohorts JOIN cohorts ON cohorts.id = cohorts.cohort_id WHERE cohorts.id = $1;
+    # params = [id]
+
+    # returns a cohort object with an array of cohort objects
   end
 
   # Add more methods below for each operation you'd like to implement.
 
-  # def create(student)
+  # def create(cohort)
   # end
 
-  # def update(student)
+  # def update(cohort)
   # end
 
-  # def delete(student)
+  # def delete(cohort)
   # end
 end
 ```
@@ -153,34 +174,49 @@ These examples will later be encoded as RSpec tests.
 # EXAMPLES
 
 # 1
-# Get all students
+# Get all cohorts
 
-repo = StudentRepository.new
+repo = CohortRepository.new
 
-students = repo.all
+cohorts = repo.all
 
-students.length # =>  2
+cohorts.length # =>  2
 
-students[0].id # =>  1
-students[0].name # =>  'David'
-students[0].cohort_name # =>  'April 2022'
+cohorts[0].id # =>  1
+cohorts[0].start_date # =>  '2022-01-10'
+cohorts[0].cohort_name # =>  'January 2022'
 
-students[1].id # =>  2
-students[1].name # =>  'Anna'
-students[1].cohort_name # =>  'May 2022'
+cohorts[1].id # =>  2
+cohorts[1].start_date # =>  '2022-02-10'
+cohorts[1].cohort_name # =>  'February 2022'
 
 # 2
-# Get a single student
+# Get a single cohort
 
-repo = StudentRepository.new
+repo = CohortRepository.new
 
-student = repo.find(1)
+cohort = repo.find(1)
 
-student.id # =>  1
-student.name # =>  'David'
-student.cohort_name # =>  'April 2022'
+cohort.id # =>  1
+cohort.cohort_name # =>  'January 2022'
+cohort.start_date # =>  '2022-01-10'
 
 # Add more examples for each method
+
+# 3
+# Get a cohort with all its students
+
+repo = CohortRepository.new
+
+cohort = repo.find_with_students(1)
+
+cohort.id # => 1
+cohort.cohort_name # => 'January 2022'
+cohort.students.length # => 3
+cohort.students.first.name # => 'David'
+cohort.students[1].cohort_id # => 1
+cohort.students.last.id # => 5
+cohort.students.last.name # => 'Pat'
 ```
 
 Encode this example as a test.
@@ -194,17 +230,17 @@ This is so you get a fresh table contents every time you run the test suite.
 ```ruby
 # EXAMPLE
 
-# file: spec/student_repository_spec.rb
+# file: spec/cohort_repository_spec.rb
 
-def reset_students_table
-  seed_sql = File.read('spec/seeds_students.sql')
-  connection = PG.connect({ host: '127.0.0.1', dbname: 'students' })
+def reset_cohorts_table
+  seed_sql = File.read('spec/seeds_cohorts.sql')
+  connection = PG.connect({ host: '127.0.0.1', dbname: 'cohorts' })
   connection.exec(seed_sql)
 end
 
-describe StudentRepository do
+describe cohortRepository do
   before(:each) do 
-    reset_students_table
+    reset_cohorts_table
   end
 
   # (your tests will go here).
